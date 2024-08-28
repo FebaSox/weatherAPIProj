@@ -1,5 +1,3 @@
-// script.js
-
 const apiKey = "60cdd44ccd7e42779d63f4fe2da17f97";
 const apiUrl = "https://api.openweathermap.org/data/2.5/weather";
 const giphyApiKey = "nYtChfHENck0F5WC8GSiDIrY2YXjDn1a";
@@ -15,20 +13,25 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
     const location = document.getElementById("location-input").value;
-    fetchWeatherData(location);
+    fetchWeatherData(location, true);
   });
 
-async function fetchWeatherData(location) {
+async function fetchWeatherData(location, isNew = false) {
   document.getElementById("loading").style.display = "block";
 
   try {
     const response = await fetch(
-      `${"https://api.openweathermap.org/data/2.5/weather"}?q=lat=43.34&lon=10.98&appid=${"60cdd44ccd7e42779d63f4fe2da17f97"}&units=metric`
+      `${apiUrl}?q=${location}&appid=${apiKey}&units=metric`
     );
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
     const processedData = processWeatherData(data);
-    displayWeather(processedData);
+    const gifUrl = await fetchGif(processedData.description);
+    displayWeather(processedData, gifUrl);
+    if (isNew) {
+      selectedAreas.add(location);
+      updateSavedAreas();
+    }
   } catch (error) {
     console.error("Error fetching weather data:", error);
     document.getElementById("weather-info").innerHTML =
@@ -47,12 +50,13 @@ function processWeatherData(data) {
   };
 }
 
-function displayWeather(data) {
+function displayWeather(data, gifUrl) {
   const weatherInfo = `
         <h2>Weather in ${data.location}</h2>
         <p>Temperature: ${data.temperature}°C</p>
         <p>Description: ${data.description}</p>
         <img src="${data.icon}" alt="${data.description}">
+        ${gifUrl ? `<img src="${gifUrl}" alt="Weather GIF">` : ""}
     `;
   document.getElementById("weather-info").innerHTML = weatherInfo;
 }
@@ -81,40 +85,12 @@ class SelectedAreas {
 
 const selectedAreas = new SelectedAreas();
 
-document
-  .getElementById("weather-form")
-  .addEventListener("submit", function (event) {
-    event.preventDefault();
-    const location = document.getElementById("location-input").value;
-    fetchWeatherData(location, true);
-  });
-
-async function fetchWeatherData(location, isNew = false) {
-  document.getElementById("loading").style.display = "block";
-
-  try {
-    const response = await fetch(
-      `${'https://api.openweathermap.org/data/2.5/weather'}?q=$&appid=${'60cdd44ccd7e42779d63f4fe2da17f97'}&units=metric`
-    );
-    if (!response.ok) throw new Error("Network response was not ok");
-    const data = await response.json();
-    const processedData = processWeatherData(data);
-    displayWeather(processedData);
-    if (isNew) {
-      selectedAreas.add(location);
-      updateSavedAreas();
-    }
-  } catch (error) {
-    console.error("Error fetching weather data:", error);
-    document.getElementById("weather-info").innerHTML =
-      "Error fetching weather data.";
-  } finally {
-    document.getElementById("loading").style.display = "none";
-  }
-}
-
 function updateSavedAreas() {
   const savedAreasDiv = document.getElementById("saved-areas");
+  if (!savedAreasDiv) {
+    console.error("Element with ID 'saved-areas' not found.");
+    return;
+  }
   savedAreasDiv.innerHTML = "<h2>Saved Areas</h2>";
   selectedAreas.areas.forEach((area) => {
     savedAreasDiv.innerHTML += `
@@ -135,7 +111,7 @@ function removeArea(area) {
 async function fetchGif(description) {
   try {
     const response = await fetch(
-      `${'https://api.giphy.com/v1/gifs/search'}?q=${description}&api_key=${'nYtChfHENck0F5WC8GSiDIrY2YXjDn1a'}&limit=1`
+      `${giphyUrl}?q=${description}&api_key=${giphyApiKey}&limit=1`
     );
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
@@ -146,40 +122,5 @@ async function fetchGif(description) {
   }
 }
 
-async function fetchWeatherData(location, isNew = false) {
-  document.getElementById("loading").style.display = "block";
-
-  try {
-    const response = await fetch(
-      `${'https://api.openweathermap.org/data/2.5/weather'}?lat=44.34&lon=10.99&appid=${'60cdd44ccd7e42779d63f4fe2da17f97'}&units=metric`
-    );
-    if (!response.ok) throw new Error("Network response was not ok");
-    const data = await response.json();
-    const processedData = processWeatherData(data);
-    const gifUrl = await fetchGif(processedData.description);
-    displayWeather(processedData, gifUrl);
-    if (isNew) {
-      selectedAreas.add(location);
-      //updateSavedAreas();
-    }
-  } catch (error) {
-    console.error("Error fetching weather data:", error);
-    document.getElementById("weather-info").innerHTML =
-      "Error fetching weather data.";
-  } finally {
-    document.getElementById("loading").style.display = "none";
-  }
-}
-
-function displayWeather(data, gifUrl) {
-  const weatherInfo = `
-        <h2>Weather in ${data.location}</h2>
-        <p>Temperature: ${data.temperature}°C</p>
-        <p>Description: ${data.description}</p>
-        <img src="${data.icon}" alt="${data.description}">
-        ${gifUrl ? `<img src="${gifUrl}" alt="Weather GIF">` : ""}
-    `;
-  document.getElementById("weather-info").innerHTML = weatherInfo;
-}
-
 updateSavedAreas();
+
